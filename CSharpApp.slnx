@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="CSharpApp.Api/CSharpApp.Api.csproj" />
+    <Project Path="CSharpApp.Application/CSharpApp.Application.csproj" />
+    <Project Path="CSharpApp.Core/CSharpApp.Core.csproj" />
+    <Project Path="CSharpApp.Infrastructure/CSharpApp.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+</Solution>

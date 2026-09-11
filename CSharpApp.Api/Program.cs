@@ -11,8 +11,7 @@ builder.Services.AddHttpConfiguration();
 builder.Services.AddProblemDetails();
 builder.Services.AddApiVersioning(options =>
 {
-    // Versions live in the URL segment (api/v{version}); saying so explicitly skips the default
-    // query-string lookup on every request (analyzer AV0015).
+    // Versions are URL segments; the default reader would also probe the query string on every request (AV0015).
     options.ApiVersionReader = new UrlSegmentApiVersionReader();
 });
 

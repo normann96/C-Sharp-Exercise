@@ -28,8 +28,11 @@ public sealed class PlatziStoreClient(HttpClient http, IOptions<RestApiSettings>
     {
         using var response = await http.PostAsJsonAsync(_productsPath, request, PlatziJsonContext.Default.CreateProductRequest, ct);
         await response.EnsureUpstreamSuccessAsync(ct);
-        return await response.Content.ReadFromJsonAsync(PlatziJsonContext.Default.Product, ct)
-               ?? throw new HttpRequestException("Upstream API returned an empty body for the created product.");
+        var created = await response.Content.ReadFromJsonAsync(PlatziJsonContext.Default.Product, ct)
+                      ?? throw new HttpRequestException("Upstream API returned an empty body for the created product.");
+        return created.Id is not null
+            ? created
+            : throw new HttpRequestException("Upstream API returned a created product without an id.");
     }
 
     public async Task<IReadOnlyList<Category>> GetCategoriesAsync(CancellationToken ct)
@@ -51,7 +54,10 @@ public sealed class PlatziStoreClient(HttpClient http, IOptions<RestApiSettings>
     {
         using var response = await http.PostAsJsonAsync(_categoriesPath, request, PlatziJsonContext.Default.CreateCategoryRequest, ct);
         await response.EnsureUpstreamSuccessAsync(ct);
-        return await response.Content.ReadFromJsonAsync(PlatziJsonContext.Default.Category, ct)
-               ?? throw new HttpRequestException("Upstream API returned an empty body for the created category.");
+        var created = await response.Content.ReadFromJsonAsync(PlatziJsonContext.Default.Category, ct)
+                      ?? throw new HttpRequestException("Upstream API returned an empty body for the created category.");
+        return created.Id is not null
+            ? created
+            : throw new HttpRequestException("Upstream API returned a created category without an id.");
     }
 }

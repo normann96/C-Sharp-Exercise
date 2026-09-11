@@ -1,7 +1,46 @@
 @HostAddress = http://localhost:5225
 @Version = v1
 
-GET {{HostAddress}}/api/{{Version}}/getproducts
+### Products: list
+GET {{HostAddress}}/api/{{Version}}/products
 Accept: application/json
 
-###
+### Products: list with paging (limit and offset must be given together)
+GET {{HostAddress}}/api/{{Version}}/products?limit=10&offset=0
+Accept: application/json
+
+### Products: one by id
+GET {{HostAddress}}/api/{{Version}}/products/2
+Accept: application/json
+
+### Products: an id the upstream does not know -> 404
+GET {{HostAddress}}/api/{{Version}}/products/999999
+Accept: application/json
+
+### Products: create
+POST {{HostAddress}}/api/{{Version}}/products
+Content-Type: application/json
+
+{
+  "title": "Sample product",
+  "price": 12,
+  "description": "Created from the .http file",
+  "categoryId": 1,
+  "images": ["https://placehold.co/600x400"]
+}
+
+### Products: create with invalid input -> validation failure
+POST {{HostAddress}}/api/{{Version}}/products
+Content-Type: application/json
+
+{
+  "title": "",
+  "price": 0,
+  "description": "",
+  "categoryId": 0,
+  "images": []
+}
+
+### OpenAPI document (Development only)
+GET {{HostAddress}}/openapi/v1.json
+Accept: application/json

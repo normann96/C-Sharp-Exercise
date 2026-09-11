@@ -1,3 +1,5 @@
+using CSharpApp.Core.Extensions;
+
 namespace CSharpApp.Core.Settings;
 
 /// <summary>
@@ -11,8 +13,7 @@ public sealed class AbsoluteHttpUrlAttribute() : ValidationAttribute("The {0} fi
     {
         null => true,                                   // presence is [Required]'s job
         string s when string.IsNullOrWhiteSpace(s) => true,
-        string s => Uri.TryCreate(s, UriKind.Absolute, out var uri)
-                    && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps),
+        string s => s.IsAbsoluteHttpUrl(),
         _ => false
     };
 }

@@ -3,7 +3,6 @@
 global using System.Net;
 global using System.Net.Http.Json;
 global using System.Text.Json.Serialization;
-global using CSharpApp.Application.Products;
 global using CSharpApp.Core.Dtos;
 global using CSharpApp.Core.Interfaces;
 global using CSharpApp.Core.Settings;

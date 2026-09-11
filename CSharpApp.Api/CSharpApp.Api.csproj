@@ -7,12 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="10.2.1" />
+        <PackageReference Include="Asp.Versioning.Http" Version="10.2.1" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
         <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\CSharpApp.Application\CSharpApp.Application.csproj" />
       <ProjectReference Include="..\CSharpApp.Core\CSharpApp.Core.csproj" />
       <ProjectReference Include="..\CSharpApp.Infrastructure\CSharpApp.Infrastructure.csproj" />
     </ItemGroup>

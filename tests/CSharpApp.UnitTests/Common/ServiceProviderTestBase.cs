@@ -1,3 +1,4 @@
+using CSharpApp.Application.Configuration;
 using CSharpApp.Infrastructure.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,6 +32,7 @@ public abstract class ServiceProviderTestBase : HttpTestBase, IDisposable
         var services = new ServiceCollection();
         services.AddSingleton<IConfiguration>(configurationRoot);
         services.AddLogging();
+        services.AddApplication();
         services.AddDefaultConfiguration();
         configureServices?.Invoke(services);
 

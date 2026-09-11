@@ -1,0 +1,7 @@
+@HostAddress = http://localhost:5225
+@Version = v1
+
+GET {{HostAddress}}/api/{{Version}}/getproducts
+Accept: application/json
+
+###

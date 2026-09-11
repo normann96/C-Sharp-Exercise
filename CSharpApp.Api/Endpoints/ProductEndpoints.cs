@@ -25,7 +25,7 @@ public static class ProductEndpoints
         products.MapPost("/", async Task<CreatedAtRoute<Product>> (CreateProductRequest request, ISender sender, CancellationToken ct) =>
             {
                 var created = await sender.Send(new CreateProductCommand(request), ct);
-                // Built from the route rather than a literal, so a future version returns its own Location.
+                // The path comes from the named route; only the version segment is supplied here.
                 return TypedResults.CreatedAtRoute(created, "GetProductById", new { version = "1", id = created.Id });
             })
             .WithName("CreateProduct");

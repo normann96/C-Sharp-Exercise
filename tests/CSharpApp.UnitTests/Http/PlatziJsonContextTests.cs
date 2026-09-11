@@ -21,6 +21,20 @@ public class PlatziJsonContextTests
     }
 
     [Fact]
+    public void Product_AndItsCategory_KeepTheUpstreamSlug()
+    {
+        // Arrange: a proxy that drops fields silently narrows the contract its clients see
+        const string json = """{"id":1,"title":"T","slug":"t-shirt","price":10,"category":{"id":1,"name":"C","slug":"clothes"}}""";
+
+        // Act
+        var product = JsonSerializer.Deserialize(json, PlatziJsonContext.Default.Product);
+
+        // Assert
+        Assert.Equal("t-shirt", product!.Slug);
+        Assert.Equal("clothes", product.Category?.Slug);
+    }
+
+    [Fact]
     public void Product_PriceMayBeFractional()
     {
         // Arrange: the upstream schema says "number" and the sandbox is publicly writable, so one 10.5 must not break the whole list

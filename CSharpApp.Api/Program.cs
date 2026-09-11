@@ -27,5 +27,6 @@ if (app.Environment.IsDevelopment())
 
 var api = app.NewVersionedApi();
 api.MapProductEndpoints();
+api.MapCategoryEndpoints();
 
 app.Run();

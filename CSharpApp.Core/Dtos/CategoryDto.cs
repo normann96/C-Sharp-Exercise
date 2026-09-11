@@ -8,6 +8,9 @@ public sealed class Category
     [JsonPropertyName("name")]
     public string? Name { get; set; }
 
+    [JsonPropertyName("slug")]
+    public string? Slug { get; set; }
+
     [JsonPropertyName("image")]
     public string? Image { get; set; }
 

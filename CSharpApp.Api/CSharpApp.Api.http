@@ -41,6 +41,37 @@ Content-Type: application/json
   "images": []
 }
 
+
+### Categories: list
+GET {{HostAddress}}/api/{{Version}}/categories
+Accept: application/json
+
+### Categories: one by id
+GET {{HostAddress}}/api/{{Version}}/categories/1
+Accept: application/json
+
+### Categories: an id the upstream does not know -> 404
+GET {{HostAddress}}/api/{{Version}}/categories/999999
+Accept: application/json
+
+### Categories: create
+POST {{HostAddress}}/api/{{Version}}/categories
+Content-Type: application/json
+
+{
+  "name": "Sample category",
+  "image": "https://placehold.co/600x400"
+}
+
+### Categories: create with invalid input -> validation failure
+POST {{HostAddress}}/api/{{Version}}/categories
+Content-Type: application/json
+
+{
+  "name": "",
+  "image": "not-a-url"
+}
+
 ### OpenAPI document (Development only)
 GET {{HostAddress}}/openapi/v1.json
 Accept: application/json

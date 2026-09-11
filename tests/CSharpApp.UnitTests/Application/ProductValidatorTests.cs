@@ -82,6 +82,32 @@ public class CreateProductCommandValidatorTests
     }
 
     [Fact]
+    public void AbsentImages_FailsCleanlyInsteadOfThrowing()
+    {
+        // Arrange: a body without the "images" key deserializes to null, and the rules after NotEmpty still run
+        var command = new CreateProductCommand(new CreateProductRequest("Title", 10, "Description", 1, null!));
+
+        // Act
+        var result = _validator.Validate(command);
+
+        // Assert
+        Assert.Equal("images", Assert.Single(result.Errors).PropertyName);
+    }
+
+    [Fact]
+    public void OverlongImageUrl_FailsAndNamesTheOffendingElement()
+    {
+        // Arrange: an unbounded URL would be forwarded to the upstream as-is
+        var command = Command(images: ["https://img.example/ok.png", $"https://img.example/{new string('x', 2100)}.png"]);
+
+        // Act
+        var result = _validator.Validate(command);
+
+        // Assert
+        Assert.Equal("images[1]", Assert.Single(result.Errors).PropertyName);
+    }
+
+    [Fact]
     public void NoImages_Fails()
     {
         // Arrange, Act

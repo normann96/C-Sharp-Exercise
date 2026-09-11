@@ -10,6 +10,7 @@ public interface IPlatziStoreClient
 
     Task<Product> CreateProductAsync(CreateProductRequest request, CancellationToken ct);
 
+    /// <remarks>No paging: the upstream honours a limit but silently ignores an offset, so a page after the first is unreachable.</remarks>
     Task<IReadOnlyList<Category>> GetCategoriesAsync(CancellationToken ct);
 
     /// <returns>The category, or <c>null</c> when the upstream does not know the id.</returns>

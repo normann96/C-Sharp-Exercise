@@ -9,7 +9,12 @@ builder.Services.AddOpenApi();
 builder.Services.AddDefaultConfiguration();
 builder.Services.AddHttpConfiguration();
 builder.Services.AddProblemDetails();
-builder.Services.AddApiVersioning();
+builder.Services.AddApiVersioning(options =>
+{
+    // Versions live in the URL segment (api/v{version}); saying so explicitly skips the default
+    // query-string lookup on every request (analyzer AV0015).
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
+});
 
 var app = builder.Build();
 

@@ -3,8 +3,8 @@ namespace CSharpApp.Infrastructure.Http;
 public sealed class PlatziStoreClient(HttpClient http, IOptions<RestApiSettings> options) : IPlatziStoreClient
 {
     // Only the two resource paths are kept; the client has no business holding the credentials.
-    private readonly string _productsPath = RelativePath(options.Value.Products);
-    private readonly string _categoriesPath = RelativePath(options.Value.Categories);
+    private readonly string _productsPath = options.Value.Products.AsRelativePath();
+    private readonly string _categoriesPath = options.Value.Categories.AsRelativePath();
 
     public async Task<IReadOnlyList<Product>> GetProductsAsync(int? limit, int? offset, CancellationToken ct)
     {
@@ -54,8 +54,4 @@ public sealed class PlatziStoreClient(HttpClient http, IOptions<RestApiSettings>
         return await response.Content.ReadFromJsonAsync(PlatziJsonContext.Default.Category, ct)
                ?? throw new HttpRequestException("Upstream API returned an empty body for the created category.");
     }
-
-    // The provided configuration mixes "products" and "/categories". Resolved against a BaseAddress,
-    // a leading slash escapes its /api/v1/ path, so configured paths are normalized once here.
-    private static string RelativePath(string? configuredPath) => (configuredPath ?? string.Empty).Trim().Trim('/');
 }

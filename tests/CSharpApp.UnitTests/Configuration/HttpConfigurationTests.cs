@@ -15,7 +15,16 @@ public class HttpConfigurationTests : ServiceProviderTestBase
 {
     private readonly StubHttpMessageHandler _unavailableUpstream = new(_ => Status(HttpStatusCode.ServiceUnavailable));
 
-    private ServiceProvider BuildHttpProvider(string baseUrl = BaseUrl, int retryCount = 2, int sleepDuration = 100, string? clientWithStubbedUpstream = null)
+    // The store client carries a bearer token, so its pipeline asks the token provider to log in.
+    private readonly StubHttpMessageHandler _workingLogin = new(_ => Json(LoginBody(), HttpStatusCode.Created));
+
+    private static string LoginBody()
+    {
+        var token = TestJwt.WithExpiry(DateTimeOffset.UtcNow.AddHours(1));
+        return $$"""{"access_token":"{{token}}","refresh_token":"r"}""";
+    }
+
+    private ServiceProvider BuildHttpProvider(string baseUrl = BaseUrl, int retryCount = 2, int sleepDuration = 100, string? clientWithStubbedUpstream = null, ITokenProvider? replaceTokenProvider = null)
     {
         var configuration = ValidConfiguration();
         configuration["RestApiSettings:BaseUrl"] = baseUrl;
@@ -25,10 +34,23 @@ public class HttpConfigurationTests : ServiceProviderTestBase
         return BuildProvider(configuration, services =>
         {
             services.AddHttpConfiguration();
-            if (clientWithStubbedUpstream is not null)
+            if (replaceTokenProvider is not null)
             {
-                services.AddHttpClient(clientWithStubbedUpstream).ConfigurePrimaryHttpMessageHandler(() => _unavailableUpstream);
+                services.AddSingleton(replaceTokenProvider);
             }
+
+            if (clientWithStubbedUpstream is null)
+            {
+                return;
+            }
+
+            // Keep the login offline whenever the client under test is not the login client itself.
+            if (clientWithStubbedUpstream != HttpConfiguration.PlatziAuth)
+            {
+                services.AddHttpClient(HttpConfiguration.PlatziAuth).ConfigurePrimaryHttpMessageHandler(() => _workingLogin);
+            }
+
+            services.AddHttpClient(clientWithStubbedUpstream).ConfigurePrimaryHttpMessageHandler(() => _unavailableUpstream);
         });
     }
 
@@ -64,6 +86,21 @@ public class HttpConfigurationTests : ServiceProviderTestBase
         Assert.IsType<PlatziStoreClient>(client);
     }
 
+    [Fact]
+    public void TokenProvider_IsASingletonSoOneIdentityServesTheWholeProcess()
+    {
+        // Arrange
+        var provider = BuildHttpProvider();
+
+        // Act
+        var first = provider.GetRequiredService<ITokenProvider>();
+        var second = provider.GetRequiredService<ITokenProvider>();
+
+        // Assert
+        Assert.IsType<AccessTokenProvider>(first);
+        Assert.Same(first, second);
+    }
+
     [Theory]
     [InlineData(HttpConfiguration.PlatziApi)]
     [InlineData(HttpConfiguration.PlatziAuth)]
@@ -91,6 +128,38 @@ public class HttpConfigurationTests : ServiceProviderTestBase
         // Assert
         Assert.Equal(4, options.Retry.MaxRetryAttempts);
         Assert.Equal(TimeSpan.FromMilliseconds(250), options.Retry.Delay);
+    }
+
+    [Fact]
+    public async Task StoreClientRequests_CarryABearerToken()
+    {
+        // Arrange
+        var provider = BuildHttpProvider(sleepDuration: 0, clientWithStubbedUpstream: HttpConfiguration.PlatziApi);
+        var client = CreateClient(provider, HttpConfiguration.PlatziApi);
+
+        // Act
+        using var response = await client.GetAsync("products");
+
+        // Assert
+        Assert.Single(_workingLogin.Requests);
+        Assert.StartsWith("Bearer ", _unavailableUpstream.Requests[0].Headers.Authorization?.ToString());
+    }
+
+    [Fact]
+    public async Task AuthHandler_SitsOutsideTheRetryPipeline()
+    {
+        // Arrange: the token is fetched once per call, not once per transient retry
+        var tokenProvider = new FakeTokenProvider("token");
+        var provider = BuildHttpProvider(retryCount: 2, sleepDuration: 0, clientWithStubbedUpstream: HttpConfiguration.PlatziApi,
+            replaceTokenProvider: tokenProvider);
+        var client = CreateClient(provider, HttpConfiguration.PlatziApi);
+
+        // Act
+        using var response = await client.GetAsync("products");
+
+        // Assert
+        Assert.Equal(3, _unavailableUpstream.Requests.Count);
+        Assert.Equal(1, tokenProvider.TokenRequests);
     }
 
     [Theory]

@@ -5,18 +5,26 @@ public static class HttpConfiguration
     public const string PlatziApi = "PlatziApi";
     public const string PlatziAuth = "PlatziAuth";
 
-    // The per-call budget, stated once instead of relying on library defaults: retries are best-effort
-    // inside the total timeout, each attempt is cut at the attempt timeout, and no single back-off wait
-    // exceeds MaxRetryDelay - the caller is a user-facing request, not a batch job.
+    // Stated here rather than inherited from library defaults: the caller is a user-facing request, not a
+    // batch job, so retries are best-effort inside the total timeout.
     private static readonly TimeSpan TotalRequestTimeout = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan AttemptTimeout = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan MaxRetryDelay = TimeSpan.FromSeconds(5);
     private const long MaxResponseBytes = 8 * 1024 * 1024;
 
+    // Hard outer bound for one call: the auth handler sits outside the pipeline, so a token refresh and one
+    // resend can otherwise stack up to HttpClient's 100-second default.
+    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(60);
+
     public static IServiceCollection AddHttpConfiguration(this IServiceCollection services)
     {
+        services.AddSingleton<ITokenProvider, AccessTokenProvider>();
+        services.AddTransient<AuthTokenHandler>();
+
         services.AddHttpClient<IPlatziStoreClient, PlatziStoreClient>(PlatziApi, ConfigureClient)
             .UseConfiguredHandlerLifetime()
+            // Outermost, so its single 401 refresh is not multiplied by the transient-retry pipeline below.
+            .AddHttpMessageHandler<AuthTokenHandler>()
             .AddStandardResilienceHandler()
             .Configure((options, sp) => ConfigureResilience(options, sp.GetRequiredService<IOptions<HttpClientSettings>>().Value, retryOnlyIdempotent: true));
 
@@ -35,6 +43,7 @@ public static class HttpConfiguration
         // Without the trailing slash, relative paths would replace the last segment of the base path.
         client.BaseAddress = new Uri(baseUrl.EndsWith('/') ? baseUrl : baseUrl + "/");
         client.MaxResponseContentBufferSize = MaxResponseBytes;
+        client.Timeout = RequestTimeout;
     }
 
     private static IHttpClientBuilder UseConfiguredHandlerLifetime(this IHttpClientBuilder builder)

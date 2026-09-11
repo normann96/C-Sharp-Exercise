@@ -6,7 +6,6 @@ internal static class UpstreamResponseExtensions
     private const string NotFoundMarker = "EntityNotFoundError";
     private const int MaxQuotedBodyLength = 500;
 
-    /// <summary>True for a 404, or for the upstream's 400 + EntityNotFoundError answer to an unknown id.</summary>
     public static async Task<bool> IsUpstreamNotFoundAsync(this HttpResponseMessage response, CancellationToken ct)
         => response.StatusCode == HttpStatusCode.NotFound
            || (response.StatusCode == HttpStatusCode.BadRequest

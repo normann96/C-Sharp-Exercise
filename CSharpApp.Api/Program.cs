@@ -8,6 +8,7 @@ builder.Services.AddApplication();
 builder.Services.AddDefaultConfiguration();
 builder.Services.AddHttpConfiguration();
 builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddApiVersioning(options =>
 {
     // Versions are URL segments; the default reader would also probe the query string on every request (AV0015).
@@ -19,6 +20,10 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.TypeInfoResolverChain.Insert(0, PlatziJsonContext.Default));
 
 var app = builder.Build();
+
+// First in the pipeline, so every failure below becomes a problem details response.
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 
 if (app.Environment.IsDevelopment())
 {

@@ -2,6 +2,7 @@
 
 global using Asp.Versioning;
 global using CSharpApp.Api.Endpoints;
+global using CSharpApp.Api.ErrorHandling;
 global using CSharpApp.Api.OpenApi;
 global using CSharpApp.Application.Configuration;
 global using CSharpApp.Infrastructure.Configuration;

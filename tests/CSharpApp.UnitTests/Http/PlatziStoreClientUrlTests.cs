@@ -1,5 +1,6 @@
 using System.Net;
 using CSharpApp.Core.Dtos;
+using CSharpApp.Core.Exceptions;
 using CSharpApp.Core.Settings;
 using CSharpApp.Infrastructure.Http;
 using CSharpApp.UnitTests.Common;
@@ -136,6 +137,37 @@ public class PlatziStoreClientUrlTests : HttpTestBase
         Assert.Equal(42, created.Id);
     }
 
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    [InlineData(HttpStatusCode.Forbidden)]
+    [InlineData(HttpStatusCode.TooManyRequests)]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    public async Task CreateProduct_UpstreamFailsForReasonsThatAreNotTheCallers_ThrowsAPlainRequestException(HttpStatusCode status)
+    {
+        // Arrange: credentials, rate limits and outages are the gateway's problem, not the request's content
+        var (client, _) = CreateClient(_ => Status(status));
+
+        // Act
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(() => client.CreateProductAsync(_newProduct, CancellationToken.None));
+
+        // Assert
+        Assert.Equal(status, exception.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetProducts_UpstreamServerError_Throws()
+    {
+        // Arrange: the list endpoints are buffered now and go through the same failure path as the rest
+        var (client, _) = CreateClient(_ => Status(HttpStatusCode.BadGateway));
+
+        // Act
+        var act = () => client.GetProductsAsync(null, null, CancellationToken.None);
+
+        // Assert
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(act);
+        Assert.Equal(HttpStatusCode.BadGateway, exception.StatusCode);
+    }
+
     [Fact]
     public async Task CreateProduct_UpstreamRejects_ThrowsWithStatusButWithoutFullBody()
     {
@@ -144,7 +176,7 @@ public class PlatziStoreClientUrlTests : HttpTestBase
         var (client, _) = CreateClient(_ => Json(hugeBody, HttpStatusCode.BadRequest));
 
         // Act
-        var exception = await Assert.ThrowsAsync<HttpRequestException>(() => client.CreateProductAsync(_newProduct, CancellationToken.None));
+        var exception = await Assert.ThrowsAsync<UpstreamRejectedRequestException>(() => client.CreateProductAsync(_newProduct, CancellationToken.None));
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, exception.StatusCode);

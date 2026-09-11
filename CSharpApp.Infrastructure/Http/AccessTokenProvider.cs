@@ -67,7 +67,7 @@ public sealed class AccessTokenProvider(
         if (!response.IsSuccessStatusCode)
         {
             // The request carried credentials, so nothing from this exchange is quoted back.
-            throw new HttpRequestException(
+            throw new HttpRequestException(HttpRequestError.UserAuthenticationError,
                 $"Upstream auth endpoint rejected the login with {(int)response.StatusCode}.", null, response.StatusCode);
         }
 

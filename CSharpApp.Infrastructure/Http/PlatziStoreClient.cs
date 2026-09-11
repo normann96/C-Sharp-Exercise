@@ -9,7 +9,11 @@ public sealed class PlatziStoreClient(HttpClient http, IOptions<RestApiSettings>
     public async Task<IReadOnlyList<Product>> GetProductsAsync(int? limit, int? offset, CancellationToken ct)
     {
         var url = limit is not null && offset is not null ? $"{_productsPath}?limit={limit}&offset={offset}" : _productsPath;
-        return await http.GetFromJsonAsync(url, PlatziJsonContext.Default.ListProduct, ct) ?? [];
+
+        // Buffered rather than streamed, so the response size cap and the attempt timeout cover the body too.
+        using var response = await http.GetAsync(url, ct);
+        await response.EnsureUpstreamSuccessAsync(ct);
+        return await response.Content.ReadFromJsonAsync(PlatziJsonContext.Default.ListProduct, ct) ?? [];
     }
 
     public async Task<Product?> GetProductAsync(int id, CancellationToken ct)
@@ -27,6 +31,7 @@ public sealed class PlatziStoreClient(HttpClient http, IOptions<RestApiSettings>
     public async Task<Product> CreateProductAsync(CreateProductRequest request, CancellationToken ct)
     {
         using var response = await http.PostAsJsonAsync(_productsPath, request, PlatziJsonContext.Default.CreateProductRequest, ct);
+        await response.ThrowIfRejectedAsync(ct);
         await response.EnsureUpstreamSuccessAsync(ct);
         var created = await response.Content.ReadFromJsonAsync(PlatziJsonContext.Default.Product, ct)
                       ?? throw new HttpRequestException("Upstream API returned an empty body for the created product.");
@@ -36,7 +41,11 @@ public sealed class PlatziStoreClient(HttpClient http, IOptions<RestApiSettings>
     }
 
     public async Task<IReadOnlyList<Category>> GetCategoriesAsync(CancellationToken ct)
-        => await http.GetFromJsonAsync(_categoriesPath, PlatziJsonContext.Default.ListCategory, ct) ?? [];
+    {
+        using var response = await http.GetAsync(_categoriesPath, ct);
+        await response.EnsureUpstreamSuccessAsync(ct);
+        return await response.Content.ReadFromJsonAsync(PlatziJsonContext.Default.ListCategory, ct) ?? [];
+    }
 
     public async Task<Category?> GetCategoryAsync(int id, CancellationToken ct)
     {
@@ -53,6 +62,7 @@ public sealed class PlatziStoreClient(HttpClient http, IOptions<RestApiSettings>
     public async Task<Category> CreateCategoryAsync(CreateCategoryRequest request, CancellationToken ct)
     {
         using var response = await http.PostAsJsonAsync(_categoriesPath, request, PlatziJsonContext.Default.CreateCategoryRequest, ct);
+        await response.ThrowIfRejectedAsync(ct);
         await response.EnsureUpstreamSuccessAsync(ct);
         var created = await response.Content.ReadFromJsonAsync(PlatziJsonContext.Default.Category, ct)
                       ?? throw new HttpRequestException("Upstream API returned an empty body for the created category.");

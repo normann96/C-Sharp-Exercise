@@ -10,7 +10,8 @@ public static class CategoryEndpoints
 {
     public static IVersionedEndpointRouteBuilder MapCategoryEndpoints(this IVersionedEndpointRouteBuilder api)
     {
-        var categories = api.MapGroup("api/v{version:apiVersion}/categories").WithTags("Categories").HasApiVersion(1.0);
+        var categories = api.MapGroup("api/v{version:apiVersion}/categories").WithTags("Categories").HasApiVersion(1.0)
+            .ProducesProblem(StatusCodes.Status502BadGateway);
 
         categories.MapGet("/", async Task<Ok<IReadOnlyList<Category>>> (ISender sender, CancellationToken ct) =>
                 TypedResults.Ok(await sender.Send(new GetCategoriesQuery(), ct)))
@@ -20,7 +21,8 @@ public static class CategoryEndpoints
                 await sender.Send(new GetCategoryByIdQuery(id), ct) is { } category
                     ? TypedResults.Ok(category)
                     : TypedResults.NotFound())
-            .WithName("GetCategoryById");
+            .WithName("GetCategoryById")
+            .ProducesValidationProblem();
 
         categories.MapPost("/", async Task<CreatedAtRoute<Category>> (CreateCategoryRequest request, ISender sender, CancellationToken ct) =>
             {
@@ -28,7 +30,9 @@ public static class CategoryEndpoints
                 // The path comes from the named route; only the version segment is supplied here.
                 return TypedResults.CreatedAtRoute(created, "GetCategoryById", new { version = "1", id = created.Id });
             })
-            .WithName("CreateCategory");
+            .WithName("CreateCategory")
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
         return api;
     }

@@ -63,6 +63,24 @@ public class DefaultConfigurationTests : ServiceProviderTestBase
     }
 
     [Fact]
+    public void PerformanceSection_IsOptionalAndOverridable()
+    {
+        // Arrange: the section is absent from the valid configuration, so the default must apply; a value must win
+        var provider = BuildProvider();
+        var overridden = ValidConfiguration();
+        overridden["PerformanceLoggingSettings:SlowRequestThresholdMs"] = "250";
+        var overriddenProvider = BuildProvider(overridden);
+
+        // Act
+        var byDefault = provider.GetRequiredService<IOptions<PerformanceLoggingSettings>>().Value.SlowRequestThresholdMs;
+        var byConfig = overriddenProvider.GetRequiredService<IOptions<PerformanceLoggingSettings>>().Value.SlowRequestThresholdMs;
+
+        // Assert
+        Assert.Equal(1000, byDefault);
+        Assert.Equal(250, byConfig);
+    }
+
+    [Fact]
     public void StartupValidation_RejectsInvalidValue()
     {
         // Arrange

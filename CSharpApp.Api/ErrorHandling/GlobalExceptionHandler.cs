@@ -84,12 +84,12 @@ public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetails
     {
         if (status >= StatusCodes.Status500InternalServerError)
         {
-            logger.LogError(exception, "Request {RequestMethod} {RequestPath} failed with {StatusCode}",
+            logger.LogError(exception, "Request {RequestMethod:l} {RequestPath:l} failed with {StatusCode}",
                 httpContext.Request.Method, httpContext.Request.Path, status);
         }
         else if (status == StatusCodes.Status422UnprocessableEntity)
         {
-            logger.LogWarning(exception, "Request {RequestMethod} {RequestPath} was rejected by the upstream service",
+            logger.LogWarning(exception, "Request {RequestMethod:l} {RequestPath:l} was rejected by the upstream service",
                 httpContext.Request.Method, httpContext.Request.Path);
         }
     }

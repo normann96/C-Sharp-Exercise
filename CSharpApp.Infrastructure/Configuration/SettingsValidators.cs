@@ -6,3 +6,6 @@ public sealed partial class RestApiSettingsValidator : IValidateOptions<RestApiS
 
 [OptionsValidator]
 public sealed partial class HttpClientSettingsValidator : IValidateOptions<HttpClientSettings>;
+
+[OptionsValidator]
+public sealed partial class PerformanceLoggingSettingsValidator : IValidateOptions<PerformanceLoggingSettings>;

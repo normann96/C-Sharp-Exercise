@@ -21,7 +21,9 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 var app = builder.Build();
 
-// First in the pipeline, so every failure below becomes a problem details response.
+// Timing sits outermost so its measurement and logged status include error handling; the exception handler
+// sits next so every failure below it becomes a problem details response.
+app.UseMiddleware<RequestTimingMiddleware>();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 

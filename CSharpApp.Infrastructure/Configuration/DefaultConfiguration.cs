@@ -11,6 +11,8 @@ public static class DefaultConfiguration
         services.AddOptionsWithValidateOnStart<HttpClientSettings, HttpClientSettingsValidator>()
             .BindConfiguration(nameof(HttpClientSettings), o => o.ErrorOnUnknownConfiguration = true);
 
+        services.AddOptionsWithValidateOnStart<PerformanceLoggingSettings, PerformanceLoggingSettingsValidator>()
+            .BindConfiguration(nameof(PerformanceLoggingSettings), o => o.ErrorOnUnknownConfiguration = true);
 
         return services;
     }

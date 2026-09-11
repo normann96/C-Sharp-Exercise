@@ -122,6 +122,44 @@ public class RestApiSettingsValidatorTests
     }
 }
 
+public class PerformanceLoggingSettingsValidatorTests
+{
+    private readonly PerformanceLoggingSettingsValidator _validator = new();
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(1000)]
+    [InlineData(60_000)]
+    public void ThresholdWithinRange_Succeeds(int thresholdMs)
+    {
+        // Arrange
+        var settings = new PerformanceLoggingSettings { SlowRequestThresholdMs = thresholdMs };
+
+        // Act
+        var result = _validator.Validate(null, settings);
+
+        // Assert
+        Assert.True(result.Succeeded);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(60_001)]
+    public void ThresholdOutOfRange_FailsNamingTheField(int thresholdMs)
+    {
+        // Arrange
+        var settings = new PerformanceLoggingSettings { SlowRequestThresholdMs = thresholdMs };
+
+        // Act
+        var result = _validator.Validate(null, settings);
+
+        // Assert
+        Assert.True(result.Failed);
+        Assert.Contains("SlowRequestThresholdMs", result.FailureMessage);
+    }
+}
+
 public class HttpClientSettingsValidatorTests
 {
     private readonly HttpClientSettingsValidator _validator = new();

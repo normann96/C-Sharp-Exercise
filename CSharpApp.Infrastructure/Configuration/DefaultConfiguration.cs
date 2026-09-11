@@ -11,7 +11,7 @@ public static class DefaultConfiguration
         services.AddOptionsWithValidateOnStart<HttpClientSettings, HttpClientSettingsValidator>()
             .BindConfiguration(nameof(HttpClientSettings), o => o.ErrorOnUnknownConfiguration = true);
 
-        services.AddSingleton<IProductsService, ProductsService>(); // replaced by the typed client and CQRS handlers in later steps
+        services.AddScoped<IProductsService, ProductsService>(); // legacy endpoint; replaced by CQRS handlers in a later step
 
         return services;
     }

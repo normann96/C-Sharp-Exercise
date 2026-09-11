@@ -5,5 +5,7 @@
     <Project Path="CSharpApp.Core/CSharpApp.Core.csproj" />
     <Project Path="CSharpApp.Infrastructure/CSharpApp.Infrastructure.csproj" />
   </Folder>
-  <Folder Name="/tests/" />
+  <Folder Name="/tests/">
+    <Project Path="tests/CSharpApp.UnitTests/CSharpApp.UnitTests.csproj" />
+  </Folder>
 </Solution>

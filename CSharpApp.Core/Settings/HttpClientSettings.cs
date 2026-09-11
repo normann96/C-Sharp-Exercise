@@ -10,7 +10,7 @@ public sealed class HttpClientSettings
     [Range(0, 10)]
     public int RetryCount { get; set; }
 
-    /// <summary>Base delay between retries, in milliseconds.</summary>
-    [Range(0, 60_000)]
+    /// <summary>Base delay between retries, in milliseconds; grows exponentially per attempt and is capped by the client's retry budget.</summary>
+    [Range(0, 10_000)]
     public int SleepDuration { get; set; }
 }

@@ -199,3 +199,58 @@ public class HttpClientSettingsValidatorTests
         Assert.Contains(field, result.FailureMessage);
     }
 }
+
+public class RateLimitingSettingsValidatorTests
+{
+    private readonly RateLimitingSettingsValidator _validator = new();
+
+    private static RateLimitingSettings ValidSettings() => new() { PermitLimit = 100, WindowSeconds = 60 };
+
+    [Fact]
+    public void ValidSettings_Succeed()
+    {
+        // Arrange
+        var settings = ValidSettings();
+
+        // Act
+        var result = _validator.Validate(null, settings);
+
+        // Assert
+        Assert.True(result.Succeeded);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(10_001)]
+    public void PermitLimitOutOfRange_FailsNamingTheField(int permitLimit)
+    {
+        // Arrange: an allowance of zero would refuse everyone, and an unbounded one would not be a limit
+        var settings = ValidSettings();
+        settings.PermitLimit = permitLimit;
+
+        // Act
+        var result = _validator.Validate(null, settings);
+
+        // Assert
+        Assert.False(result.Succeeded);
+        Assert.Contains(nameof(RateLimitingSettings.PermitLimit), result.FailureMessage);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(3601)]
+    public void WindowOutOfRange_FailsNamingTheField(int windowSeconds)
+    {
+        // Arrange
+        var settings = ValidSettings();
+        settings.WindowSeconds = windowSeconds;
+
+        // Act
+        var result = _validator.Validate(null, settings);
+
+        // Assert
+        Assert.False(result.Succeeded);
+        Assert.Contains(nameof(RateLimitingSettings.WindowSeconds), result.FailureMessage);
+    }
+}

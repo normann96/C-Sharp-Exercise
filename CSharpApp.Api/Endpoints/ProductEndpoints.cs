@@ -3,6 +3,7 @@ using CSharpApp.Application.Products;
 using CSharpApp.Core.Dtos;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CSharpApp.Api.Endpoints;
 
@@ -11,6 +12,8 @@ public static class ProductEndpoints
     public static IVersionedEndpointRouteBuilder MapProductEndpoints(this IVersionedEndpointRouteBuilder api)
     {
         var products = api.MapGroup("api/v{version:apiVersion}/products").WithTags("Products").HasApiVersion(1.0)
+            .RequireRateLimiting(RateLimitingExtensions.PolicyName)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status502BadGateway);
 
         products.MapGet("/", async Task<Ok<IReadOnlyList<Product>>> (ISender sender, int? limit, int? offset, CancellationToken ct) =>

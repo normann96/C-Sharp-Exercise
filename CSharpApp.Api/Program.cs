@@ -7,6 +7,7 @@ builder.Services.AddApplication();
 builder.Services.AddDefaultConfiguration();
 builder.Services.AddHttpConfiguration();
 builder.Services.AddProblemDetails();
+builder.Services.AddConfiguredRateLimiting();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddApiVersioning(options =>
 {
@@ -25,6 +26,7 @@ var app = builder.Build();
 app.UseMiddleware<RequestTimingMiddleware>();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+app.UseRateLimiter();
 
 if (app.Environment.IsDevelopment())
 {

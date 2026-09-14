@@ -14,6 +14,9 @@ public static class DefaultConfiguration
         services.AddOptionsWithValidateOnStart<PerformanceLoggingSettings, PerformanceLoggingSettingsValidator>()
             .BindConfiguration(nameof(PerformanceLoggingSettings), o => o.ErrorOnUnknownConfiguration = true);
 
+        services.AddOptionsWithValidateOnStart<RateLimitingSettings, RateLimitingSettingsValidator>()
+            .BindConfiguration(nameof(RateLimitingSettings), o => o.ErrorOnUnknownConfiguration = true);
+
         return services;
     }
 }

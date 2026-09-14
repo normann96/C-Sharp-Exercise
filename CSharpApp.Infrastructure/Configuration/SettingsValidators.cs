@@ -9,3 +9,6 @@ public sealed partial class HttpClientSettingsValidator : IValidateOptions<HttpC
 
 [OptionsValidator]
 public sealed partial class PerformanceLoggingSettingsValidator : IValidateOptions<PerformanceLoggingSettings>;
+
+[OptionsValidator]
+public sealed partial class RateLimitingSettingsValidator : IValidateOptions<RateLimitingSettings>;

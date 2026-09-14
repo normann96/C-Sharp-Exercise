@@ -33,7 +33,7 @@ PerformanceLoggingSettings__SlowRequestThresholdMs=50 dotnet run --project CShar
 dotnet test CSharpApp.slnx
 ```
 
-263 tests, all offline. No test touches the internet: unit tests drive a scripted message handler, and integration tests boot the real application with an in-memory upstream behind every HTTP client.
+278 tests, all offline. No test touches the internet: unit tests drive a scripted message handler, and integration tests boot the real application with an in-memory upstream behind every HTTP client.
 
 ### In Docker
 

@@ -3,6 +3,8 @@
     <ItemGroup>
         <PackageReference Include="Asp.Versioning.Http" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+        <!-- The exception handler names Polly types directly; a transitive reference is not a declared dependency. -->
+        <PackageReference Include="Polly.Core" />
         <PackageReference Include="Serilog.AspNetCore" />
         <!-- Referenced by name from appsettings, so the compiler cannot see the dependency: declare it. -->
         <PackageReference Include="Serilog.Formatting.Compact" />

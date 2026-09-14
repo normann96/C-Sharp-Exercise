@@ -9,8 +9,8 @@ Accept: application/json
 GET {{HostAddress}}/api/{{Version}}/products?limit=10&offset=0
 Accept: application/json
 
-### Products: one by id
-GET {{HostAddress}}/api/{{Version}}/products/2
+### Products: one by id (the sandbox is resettable, so ids shift; take one from the list above)
+GET {{HostAddress}}/api/{{Version}}/products/1
 Accept: application/json
 
 ### Products: an id the upstream does not know -> 404

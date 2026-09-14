@@ -22,6 +22,8 @@ public static class HttpConfiguration
 
     public static IServiceCollection AddHttpConfiguration(this IServiceCollection services)
     {
+        // The clock is a dependency like any other, so the token cache's expiry window is testable without waiting.
+        services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<ITokenProvider, AccessTokenProvider>();
         services.AddTransient<AuthTokenHandler>();
 

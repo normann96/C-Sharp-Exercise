@@ -18,3 +18,4 @@ global using Microsoft.Extensions.Http.Resilience;
 global using Microsoft.Extensions.Logging;
 global using Microsoft.Extensions.Options;
 global using Polly;
+global using Microsoft.Extensions.DependencyInjection.Extensions;

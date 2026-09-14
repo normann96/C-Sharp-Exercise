@@ -19,11 +19,12 @@ public class AccessTokenProviderTests : HttpTestBase
     });
 
     private readonly CapturingLogger<AccessTokenProvider> _logger = new();
+    private readonly FakeTimeProvider _clock = new(new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero));
 
     private (AccessTokenProvider Provider, StubHttpMessageHandler Stub) CreateProvider(Func<HttpRequestMessage, HttpResponseMessage> responder)
     {
         var (http, stub) = StubbedHttpClient(responder);
-        return (new AccessTokenProvider(new StubHttpClientFactory(http), _settings, _logger), stub);
+        return (new AccessTokenProvider(new StubHttpClientFactory(http), _settings, _logger, _clock), stub);
     }
 
     private static HttpResponseMessage LoginResponse(string token)
@@ -32,7 +33,30 @@ public class AccessTokenProviderTests : HttpTestBase
     private int _issued;
 
     // Distinct payloads per login: two tokens minted in the same second would otherwise be identical strings.
-    private string LongLivedToken() => TestJwt.WithPayload(new { sub = ++_issued, exp = DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds() });
+    private string LongLivedToken() => TokenExpiringIn(TimeSpan.FromHours(1));
+
+    private string TokenExpiringIn(TimeSpan lifetime)
+        => TestJwt.WithPayload(new { sub = ++_issued, exp = _clock.GetUtcNow().Add(lifetime).ToUnixTimeSeconds() });
+
+    [Fact]
+    public async Task ATokenIsReusedUntilItsSafetyWindowOpens_AndRefreshedAfterIt()
+    {
+        // Arrange: a token good for fifteen minutes, on a clock the test controls
+        var (provider, stub) = CreateProvider(_ => LoginResponse(TokenExpiringIn(TimeSpan.FromMinutes(15))));
+        using var _ = provider;
+        var first = await provider.GetAccessTokenAsync(CancellationToken.None);
+
+        // Act: stop just short of the sixty-second window, then step over it
+        _clock.Advance(TimeSpan.FromMinutes(13));
+        var reused = await provider.GetAccessTokenAsync(CancellationToken.None);
+        _clock.Advance(TimeSpan.FromMinutes(2));
+        var refreshed = await provider.GetAccessTokenAsync(CancellationToken.None);
+
+        // Assert
+        Assert.Equal(first, reused);
+        Assert.NotEqual(first, refreshed);
+        Assert.Equal(2, stub.Requests.Count);
+    }
 
     [Fact]
     public async Task ConcurrentColdStart_PerformsExactlyOneLogin()
@@ -70,7 +94,7 @@ public class AccessTokenProviderTests : HttpTestBase
     public async Task TokenInsideTheSafetyWindow_TriggersANewLogin()
     {
         // Arrange: the first token is still technically valid but expires in 30s, inside the safety window
-        var tokens = new Queue<string>([TestJwt.WithExpiry(DateTimeOffset.UtcNow.AddSeconds(30)), LongLivedToken()]);
+        var tokens = new Queue<string>([TokenExpiringIn(TimeSpan.FromSeconds(30)), LongLivedToken()]);
         var (provider, stub) = CreateProvider(_ => LoginResponse(tokens.Dequeue()));
         using var _ = provider;
 
@@ -172,7 +196,7 @@ public class AccessTokenProviderTests : HttpTestBase
     public async Task ShortLivedToken_IsCachedAnywayAndWarnsInsteadOfLoggingInPerRequest()
     {
         // Arrange: a token that expires inside the safety window would otherwise never be handed out
-        var (provider, stub) = CreateProvider(_ => LoginResponse(TestJwt.WithExpiry(DateTimeOffset.UtcNow.AddSeconds(10))));
+        var (provider, stub) = CreateProvider(_ => LoginResponse(TokenExpiringIn(TimeSpan.FromSeconds(10))));
         using var _ = provider;
 
         // Act

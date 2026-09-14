@@ -3,7 +3,8 @@ namespace CSharpApp.Infrastructure.Http;
 public sealed class AccessTokenProvider(
     IHttpClientFactory httpClientFactory,
     IOptions<RestApiSettings> options,
-    ILogger<AccessTokenProvider> logger) : ITokenProvider, IDisposable
+    ILogger<AccessTokenProvider> logger,
+    TimeProvider timeProvider) : ITokenProvider, IDisposable
 {
     /// <summary>Stop handing out a token this long before it expires; the 401 refresh is the backstop for the rest.</summary>
     private static readonly TimeSpan ExpirySafetyWindow = TimeSpan.FromSeconds(60);
@@ -54,8 +55,8 @@ public sealed class AccessTokenProvider(
 
     public void Dispose() => _loginGate.Dispose();
 
-    private static CachedToken? Usable(CachedToken? token)
-        => token is not null && DateTimeOffset.UtcNow < token.ExpiresAt - ExpirySafetyWindow ? token : null;
+    private CachedToken? Usable(CachedToken? token)
+        => token is not null && timeProvider.GetUtcNow() < token.ExpiresAt - ExpirySafetyWindow ? token : null;
 
     private async Task<CachedToken> LogInAsync(CancellationToken ct)
     {
@@ -74,8 +75,9 @@ public sealed class AccessTokenProvider(
         var auth = await response.Content.ReadFromJsonAsync(PlatziJsonContext.Default.AuthTokenResponse, ct)
                    ?? throw new HttpRequestException("Upstream auth endpoint returned an empty body.");
 
-        var expiresAt = JwtExpiry.TryGetExpiryUtc(auth.AccessToken) ?? DateTimeOffset.UtcNow.Add(AssumedLifetime);
-        if (expiresAt - DateTimeOffset.UtcNow <= ExpirySafetyWindow)
+        var now = timeProvider.GetUtcNow();
+        var expiresAt = JwtExpiry.TryGetExpiryUtc(auth.AccessToken) ?? now.Add(AssumedLifetime);
+        if (expiresAt - now <= ExpirySafetyWindow)
         {
             // Caching it anyway: without this the cache would never hand it out and every request would log in.
             logger.LogWarning("Upstream access token expires at {TokenExpiresAt:O}, within the safety window; caching it regardless", expiresAt);

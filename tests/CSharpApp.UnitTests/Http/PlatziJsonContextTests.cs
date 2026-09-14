@@ -1,6 +1,7 @@
 using System.Text.Json;
 using CSharpApp.Infrastructure.Http;
 
+using CSharpApp.Infrastructure.Http.Contracts;
 namespace CSharpApp.UnitTests.Http;
 
 public class PlatziJsonContextTests
@@ -12,7 +13,7 @@ public class PlatziJsonContextTests
         const string json = """{"id":1,"title":"T","price":10,"description":"d","images":["https://img.example/1.png"],"category":{"id":1,"name":"C"}}""";
 
         // Act
-        var product = JsonSerializer.Deserialize(json, PlatziJsonContext.Default.Product);
+        var product = JsonSerializer.Deserialize(json, UpstreamJsonContext.Default.PlatziProduct);
 
         // Assert
         Assert.NotNull(product);
@@ -27,7 +28,7 @@ public class PlatziJsonContextTests
         const string json = """{"id":1,"title":"T","slug":"t-shirt","price":10,"category":{"id":1,"name":"C","slug":"clothes"}}""";
 
         // Act
-        var product = JsonSerializer.Deserialize(json, PlatziJsonContext.Default.Product);
+        var product = JsonSerializer.Deserialize(json, UpstreamJsonContext.Default.PlatziProduct);
 
         // Assert
         Assert.Equal("t-shirt", product!.Slug);
@@ -41,7 +42,7 @@ public class PlatziJsonContextTests
         const string json = """{"id":1,"title":"T","price":10.5}""";
 
         // Act
-        var product = JsonSerializer.Deserialize(json, PlatziJsonContext.Default.Product);
+        var product = JsonSerializer.Deserialize(json, UpstreamJsonContext.Default.PlatziProduct);
 
         // Assert
         Assert.Equal(10.5m, product!.Price);

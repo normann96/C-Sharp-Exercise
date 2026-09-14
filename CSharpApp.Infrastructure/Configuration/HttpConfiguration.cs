@@ -1,3 +1,6 @@
+using CSharpApp.Infrastructure.Mapping;
+using Mapster;
+
 namespace CSharpApp.Infrastructure.Configuration;
 
 public static class HttpConfiguration
@@ -24,6 +27,10 @@ public static class HttpConfiguration
     {
         // The clock is a dependency like any other, so the token cache's expiry window is testable without waiting.
         services.TryAddSingleton(TimeProvider.System);
+        // Compiled up front so the first request does not pay for building the mapping.
+        TypeAdapterConfig.GlobalSettings.Scan(typeof(UpstreamMappingRegister).Assembly);
+        TypeAdapterConfig.GlobalSettings.Compile();
+
         services.AddSingleton<ITokenProvider, AccessTokenProvider>();
         services.AddTransient<AuthTokenHandler>();
 

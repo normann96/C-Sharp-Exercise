@@ -1,7 +1,6 @@
 var builder = WebApplication.CreateBuilder(args);
 
-var logger = new LoggerConfiguration().ReadFrom.Configuration(builder.Configuration).CreateLogger();
-builder.Logging.ClearProviders().AddSerilog(logger);
+builder.AddLoggingConfiguration();
 
 builder.Services.AddOpenApi(options => options.AddDocumentTransformer<VersionedPathDocumentTransformer>());
 builder.Services.AddApplication();

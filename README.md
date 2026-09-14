@@ -76,7 +76,7 @@ Four projects, and the dependency arrows match the description rather than the o
 
 A request flows: endpoint → MediatR pipeline (validation behaviour) → handler → typed client (auth handler, then the resilience pipeline) → upstream.
 
-Build configuration is centralised rather than repeated: `Directory.Build.props` carries the properties every project shares, and `Directory.Packages.props` carries every package version, so a version moves in one place and six project files stop restating the same four lines. Two of them are now a single SDK declaration. The container copies both files before restoring, which was verified by removing that line and watching the restore fail.
+Build configuration is centralised rather than repeated: `Directory.Build.props` carries the properties every project shares, and `Directory.Packages.props` carries every package version, so a version moves in one place and six project files stop restating the same properties. The Core project is now a single SDK declaration with nothing else in it. The container copies both files before restoring, which was verified by removing that line and watching the restore fail.
 
 ---
 
@@ -152,7 +152,7 @@ Build configuration is centralised rather than repeated: `Directory.Build.props`
 - This proxy is anonymous by design here. It rate-limits callers, but before real exposure it still needs its own authentication and per-client authorization. The health endpoints in particular are unauthenticated and each readiness hit costs one upstream request, so they belong off a public ingress.
 - Input is validated before it spends upstream quota, which also protects the third party: an empty create body makes the sandbox answer 500 of its own.
 - Nothing from upstream is reflected to callers: not bodies, not error text, not status codes this service did not choose.
-- The provided Postman and Insomnia collections embed live bearer tokens. They were used to understand the upstream contract and are not committed.
+- The Postman and Insomnia collections that came with the exercise are kept as provided, and they embed bearer tokens. Every one of them expired in 2022 or 2023, so nothing live is exposed here, but the habit is worth naming: a collection that carries a token eventually carries a valid one, and this repository is where a reviewer would look for that.
 - `dotnet list package --vulnerable --include-transitive` runs in CI on every push and fails the build on any finding.
 
 ## Performance notes

@@ -10,6 +10,7 @@ public sealed class StubHttpMessageHandler(Func<HttpRequestMessage, HttpResponse
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
+        ct.ThrowIfCancellationRequested(); // as a real handler would: a cancelled send never reaches the wire
         var body = request.Content is null ? null : await request.Content.ReadAsStringAsync(ct);
 
         // Concurrency tests assert on these counts: a racing Add must not silently lose a request.

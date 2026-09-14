@@ -75,3 +75,11 @@ Content-Type: application/json
 ### OpenAPI document (Development only)
 GET {{HostAddress}}/openapi/v1.json
 Accept: application/json
+
+### Health: liveness (the process answers)
+GET {{HostAddress}}/health/live
+Accept: application/json
+
+### Health: readiness (the process answers and the upstream is reachable; Degraded still answers 200)
+GET {{HostAddress}}/health/ready
+Accept: application/json

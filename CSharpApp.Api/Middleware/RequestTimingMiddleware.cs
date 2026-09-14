@@ -41,12 +41,17 @@ public sealed class RequestTimingMiddleware(
         finally
         {
             var elapsed = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
-            var level = elapsed > options.Value.SlowRequestThresholdMs ? LogLevel.Warning : LogLevel.Information;
 
             // The route pattern is the aggregation key: it has bounded cardinality, unlike a path that carries ids.
             // The exception handler clears the endpoint before it answers, but keeps the original on its feature.
             var endpoint = context.GetEndpoint() ?? context.Features.Get<IExceptionHandlerFeature>()?.Endpoint;
             var route = (endpoint as RouteEndpoint)?.RoutePattern.RawText ?? UnmatchedRoute;
+
+            var quiet = endpoint?.Metadata.GetMetadata<QuietRequestTimingMetadata>() is not null
+                        && context.Response.StatusCode < StatusCodes.Status500InternalServerError;
+            var level = quiet ? LogLevel.Debug
+                : elapsed > options.Value.SlowRequestThresholdMs ? LogLevel.Warning
+                : LogLevel.Information;
             logger.Log(level, "HTTP {RequestMethod:l} {RoutePattern:l} responded {StatusCode} in {ElapsedMilliseconds:0.0} ms ({RequestPath:l})",
                 context.Request.Method, route, context.Response.StatusCode, elapsed, context.Request.Path);
         }

@@ -4,6 +4,7 @@ public static class HttpConfiguration
 {
     public const string PlatziApi = "PlatziApi";
     public const string PlatziAuth = "PlatziAuth";
+    public const string PlatziProbe = "PlatziProbe";
 
     // Stated here rather than inherited from library defaults: the caller is a user-facing request, not a
     // batch job, so retries are best-effort inside the total timeout.
@@ -16,6 +17,9 @@ public static class HttpConfiguration
     // resend can otherwise stack up to HttpClient's 100-second default.
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(60);
 
+    // A probe reports the state now; retrying or waiting longer would only hide a flapping upstream.
+    private static readonly TimeSpan ProbeTimeout = TimeSpan.FromSeconds(3);
+
     public static IServiceCollection AddHttpConfiguration(this IServiceCollection services)
     {
         services.AddSingleton<ITokenProvider, AccessTokenProvider>();
@@ -25,14 +29,25 @@ public static class HttpConfiguration
             .UseConfiguredHandlerLifetime()
             // Outermost, so its single 401 refresh is not multiplied by the transient-retry pipeline below.
             .AddHttpMessageHandler<AuthTokenHandler>()
-            .AddStandardResilienceHandler()
-            .Configure((options, sp) => ConfigureResilience(options, sp.GetRequiredService<IOptions<HttpClientSettings>>().Value, retryOnlyIdempotent: true));
+            .AddConfiguredResilience(retryOnlyIdempotent: true);
 
         // Login has no side effects, so its POST may be retried; the store client's writes may not.
         services.AddHttpClient(PlatziAuth, ConfigureClient)
             .UseConfiguredHandlerLifetime()
-            .AddStandardResilienceHandler()
-            .Configure((options, sp) => ConfigureResilience(options, sp.GetRequiredService<IOptions<HttpClientSettings>>().Value, retryOnlyIdempotent: false));
+            .AddConfiguredResilience(retryOnlyIdempotent: false);
+
+        services.AddHttpClient(PlatziProbe, (sp, client) =>
+            {
+                ConfigureClient(sp, client);
+                client.Timeout = ProbeTimeout;
+            })
+            .UseConfiguredHandlerLifetime();
+
+        // The health service enforces its own bound on the check, independent of the probe client's timeout, and
+        // Degraded is what it reports for the two paths the check does not control: that bound firing, and a throw.
+        services.AddHealthChecks()
+            .AddCheck<PlatziApiHealthCheck>(PlatziApiHealthCheck.Name, failureStatus: HealthStatus.Degraded,
+                tags: [PlatziApiHealthCheck.ReadyTag], timeout: ProbeTimeout + TimeSpan.FromSeconds(1));
 
         return services;
     }
@@ -43,7 +58,16 @@ public static class HttpConfiguration
         // Without the trailing slash, relative paths would replace the last segment of the base path.
         client.BaseAddress = new Uri(baseUrl.EndsWith('/') ? baseUrl : baseUrl + "/");
         client.MaxResponseContentBufferSize = MaxResponseBytes;
-        client.Timeout = RequestTimeout;
+    }
+
+    private static IHttpClientBuilder AddConfiguredResilience(this IHttpClientBuilder builder, bool retryOnlyIdempotent)
+    {
+        builder.AddStandardResilienceHandler()
+            .Configure((options, sp) => ConfigureResilience(options, sp.GetRequiredService<IOptions<HttpClientSettings>>().Value, retryOnlyIdempotent));
+
+        // The resilience handler resets the client timeout to infinite so that its own budget is the only one, and it
+        // does so after the client's configure action - so the hard bound must follow it here, or it is silently lost.
+        return builder.ConfigureHttpClient(client => client.Timeout = RequestTimeout);
     }
 
     private static IHttpClientBuilder UseConfiguredHandlerLifetime(this IHttpClientBuilder builder)

@@ -109,6 +109,38 @@ public partial class RequestTimingMiddlewareTests
     }
 
     [Fact]
+    public async Task QuietEndpoint_IsLoggedAtDebug_EvenWhenSlow()
+    {
+        // Arrange: health probes hit every few seconds and the readiness one pays an upstream round-trip
+        var quiet = new RouteEndpoint(_ => Task.CompletedTask, RoutePatternFactory.Parse("health/ready"), 0,
+            new EndpointMetadataCollection(new QuietRequestTimingMetadata()), "ready");
+        var middleware = Middleware(async context => { context.SetEndpoint(quiet); await Task.Delay(30); }, slowThresholdMs: 1);
+
+        // Act
+        await middleware.InvokeAsync(_context);
+
+        // Assert
+        var entry = Assert.Single(_log.Entries);
+        Assert.Equal(LogLevel.Debug, entry.Level);
+        Assert.Contains("health/ready", entry.Message);
+    }
+
+    [Fact]
+    public async Task QuietEndpoint_ThatFailsServerSide_IsNotQuiet()
+    {
+        // Arrange: a probe answering 5xx means this process is broken, which is exactly what the log is for
+        var quiet = new RouteEndpoint(_ => Task.CompletedTask, RoutePatternFactory.Parse("health/live"), 0,
+            new EndpointMetadataCollection(new QuietRequestTimingMetadata()), "live");
+        var middleware = Middleware(context => { context.SetEndpoint(quiet); context.Response.StatusCode = StatusCodes.Status500InternalServerError; return Task.CompletedTask; });
+
+        // Act
+        await middleware.InvokeAsync(_context);
+
+        // Assert
+        Assert.Equal(LogLevel.Information, Assert.Single(_log.Entries).Level);
+    }
+
+    [Fact]
     public async Task StillLogs_AndRethrows_WhenTheRestOfThePipelineThrows()
     {
         // Arrange: the exception handler sets the status before rethrowing; whatever is on the response is what gets logged

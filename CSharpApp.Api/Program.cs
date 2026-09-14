@@ -36,4 +36,6 @@ var api = app.NewVersionedApi();
 api.MapProductEndpoints();
 api.MapCategoryEndpoints();
 
+app.MapHealthEndpoints();
+
 app.Run();

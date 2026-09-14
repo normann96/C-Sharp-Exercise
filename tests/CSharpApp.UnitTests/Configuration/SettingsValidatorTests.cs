@@ -14,6 +14,23 @@ public class RestApiSettingsValidatorTests
         Auth = "/auth/login", Username = "john@mail.com", Password = Secret
     };
 
+    [Theory]
+    [InlineData("http://localhost:5000/api/v1/")]
+    [InlineData("http://127.0.0.1:5000/api/v1/")]
+    [InlineData("https://api.escuelajs.co/api/v1/")]
+    public void BaseUrlThatIsEncryptedOrLocal_Succeeds(string baseUrl)
+    {
+        // Arrange: plain http stays allowed on loopback so a mock upstream on this machine still works
+        var settings = ValidSettings();
+        settings.BaseUrl = baseUrl;
+
+        // Act
+        var result = _validator.Validate(null, settings);
+
+        // Assert
+        Assert.True(result.Succeeded);
+    }
+
     [Fact]
     public void ValidSettings_Succeed()
     {
@@ -34,6 +51,7 @@ public class RestApiSettingsValidatorTests
     [InlineData("not-a-url")]
     [InlineData("https://")]
     [InlineData("ftp://example.com/api/")]
+    [InlineData("http://api.escuelajs.co/api/v1/")]  // the login POST carries credentials to this address
     [InlineData("api.escuelajs.co/api/v1/")]
     public void InvalidBaseUrl_FailsNamingTheField(string? baseUrl)
     {

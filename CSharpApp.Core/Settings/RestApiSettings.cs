@@ -6,7 +6,7 @@ public sealed class RestApiSettings
     private const string RelativePathMessage = "The {0} field must be a relative resource path such as 'products' or '/auth/login'.";
 
     /// <summary>Absolute http(s) URL of the upstream API root; the resource paths below are resolved relative to it.</summary>
-    [Required, AbsoluteHttpUrl]
+    [Required, AbsoluteHttpUrl(RequireHttps = true)]
     public string? BaseUrl { get; set; }
 
     [Required, RegularExpression(RelativePathPattern, ErrorMessage = RelativePathMessage)]

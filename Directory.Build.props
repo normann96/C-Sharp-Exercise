@@ -1,0 +1,11 @@
+<Project>
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <!-- Nothing here is published as a package; the deliverable is a running service. -->
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+</Project>

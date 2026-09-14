@@ -1,7 +1,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Restore on the project files alone, so editing code does not re-resolve every package.
+# Restore on the project files alone, so editing code does not re-resolve every package. The root files
+# carry the shared properties and every package version, so a build without them resolves differently.
+COPY Directory.Build.props Directory.Packages.props ./
 COPY CSharpApp.Api/CSharpApp.Api.csproj CSharpApp.Api/
 COPY CSharpApp.Application/CSharpApp.Application.csproj CSharpApp.Application/
 COPY CSharpApp.Core/CSharpApp.Core.csproj CSharpApp.Core/

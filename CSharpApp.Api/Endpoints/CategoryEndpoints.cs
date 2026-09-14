@@ -11,7 +11,9 @@ public static class CategoryEndpoints
 {
     public static IVersionedEndpointRouteBuilder MapCategoryEndpoints(this IVersionedEndpointRouteBuilder api)
     {
-        var categories = api.MapGroup("api/v{version:apiVersion}/categories").WithTags("Categories").HasApiVersion(1.0)
+        var categories = api.MapGroup("api/v{version:apiVersion}/categories")
+            .WithTags("Categories")
+            .HasApiVersion(1.0)
             .RequireRateLimiting(RateLimitingExtensions.PolicyName)
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status502BadGateway);

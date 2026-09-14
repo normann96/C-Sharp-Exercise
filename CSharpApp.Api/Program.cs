@@ -13,6 +13,8 @@ builder.Services.AddApiVersioning(options =>
 {
     // Versions are URL segments; the default reader would also probe the query string on every request (AV0015).
     options.ApiVersionReader = new UrlSegmentApiVersionReader();
+    // Clients discover the version surface from the response instead of from the documentation.
+    options.ReportApiVersions = true;
 });
 
 // Serialize our own responses with the same source-generated context the upstream calls use.

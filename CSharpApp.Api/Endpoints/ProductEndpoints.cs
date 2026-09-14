@@ -11,7 +11,9 @@ public static class ProductEndpoints
 {
     public static IVersionedEndpointRouteBuilder MapProductEndpoints(this IVersionedEndpointRouteBuilder api)
     {
-        var products = api.MapGroup("api/v{version:apiVersion}/products").WithTags("Products").HasApiVersion(1.0)
+        var products = api.MapGroup("api/v{version:apiVersion}/products")
+            .WithTags("Products")
+            .HasApiVersion(1.0)
             .RequireRateLimiting(RateLimitingExtensions.PolicyName)
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status502BadGateway);

@@ -2,10 +2,10 @@ using CSharpApp.Application.Products;
 using CSharpApp.Core.Dtos;
 using CSharpApp.Core.Interfaces;
 using CSharpApp.Core.Settings;
+using CSharpApp.UnitTests.Common;
 using CSharpApp.UnitTests.TestDoubles;
 using FluentValidation;
 using MediatR;
-using CSharpApp.UnitTests.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 

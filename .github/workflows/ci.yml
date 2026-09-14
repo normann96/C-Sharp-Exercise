@@ -43,6 +43,18 @@ jobs:
       - name: Test
         run: dotnet test CSharpApp.slnx --no-build --configuration Release
 
+      - name: Build the container image
+        run: |
+          docker compose config -q
+          docker build -t csharpapp:ci .
+
+      # Liveness answers for the process alone, so a broken image fails here rather than on a reviewer's machine.
+      - name: Smoke the container
+        run: |
+          docker run -d --name ci-smoke -p 8080:8080 csharpapp:ci
+          curl -fsS --retry 20 --retry-delay 1 --retry-all-errors http://localhost:8080/health/live \
+            || { docker logs ci-smoke; exit 1; }
+
       - name: Audit packages for known vulnerabilities
         run: |
           dotnet list CSharpApp.slnx package --vulnerable --include-transitive | tee vulnerable-packages.txt

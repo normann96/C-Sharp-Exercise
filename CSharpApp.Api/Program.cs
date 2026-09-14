@@ -39,3 +39,6 @@ api.MapCategoryEndpoints();
 app.MapHealthEndpoints();
 
 app.Run();
+
+// Names the entry point for WebApplicationFactory; the generated class's accessibility is the compiler's choice, not ours.
+public partial class Program;
